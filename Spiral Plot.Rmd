@@ -1,0 +1,55 @@
+---
+title: "PEC2"
+subtitle: "Visualización de Datos"
+author: "Alex Lombao Chiuta"
+date: "Noviembre 2024"
+always_allow_html: true
+output:
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+  html_document:
+    toc: yes
+---
+
+```{r}
+if (!require('ggplot2')) install.packages("ggplot2"); library(ggplot2)
+
+# Leer el .csv
+file_text <- readLines("daily-website-visitors.csv")
+
+# Eliminar las comas de los millares de los números entre ""
+file_text <- gsub('\"([0-9]+),([0-9]+)\"', '\\1\\2', file_text) 
+writeLines(file_text, "temp.csv")
+data <- read.csv("temp.csv")
+
+# Dar formato a la fecha
+data$Fecha <- as.Date(data[,4], format="%m/%d/%Y")
+
+# Definir rango de fechas
+fecha_inicio <- as.Date("2015-01-01")
+fecha_fin <- as.Date("2017-12-31")
+data_filtrada <- subset(data, Fecha >= fecha_inicio & Fecha <= fecha_fin)
+
+# Definir la fecha de inicio para incluir el número acumulativo de días (teniendo en cuenta años bisiestos)
+data_filtrada$day_num <- as.numeric(difftime(data_filtrada$Fecha, fecha_inicio, units = "days")) + 1
+
+ggplot(data_filtrada, aes(day_num %% 365, 18*day_num + Unique.Visits/2, height = Unique.Visits, fill = Unique.Visits)) + 
+  geom_tile() + 
+  scale_y_continuous(limits = c(-20, NA), name = "", labels = NULL) +
+  scale_x_continuous(breaks = 30*0:11, minor_breaks = NULL, labels = month.abb, name = "") +
+  coord_polar() + 
+  scale_fill_viridis_c(name = "Visitas", option = "C") +
+  theme_minimal() + 
+  labs(title = "Visitas Diarias (2015-2017)") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r, echo = FALSE, eval = FALSE}
+# Guardar la visualización en formato .jpg
+ggsave("spiral_plot_alta_calidad.jpg", 
+       plot = last_plot(),
+       width = 10, height = 10,     # dimensiones en pulgadas
+       dpi = 500)                   # resolución en dpi
+```
